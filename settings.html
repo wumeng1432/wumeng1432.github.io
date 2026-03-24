@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人设置 - 游客点单排队系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        body {
+            background-color: #f5f5f5;
+            padding-bottom: 80px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 30px;
+            margin-top: 20px;
+        }
+        .title {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .settings-form {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .settings-form .form-group {
+            margin-bottom: 20px;
+        }
+        .settings-form label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        .settings-form input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e6e6e6;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        .submit-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            background-color: #67c23a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0,0,0,0.7);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 8px;
+            display: none;
+            z-index: 999;
+        }
+        .toast.show {
+            display: block;
+            animation: fade 2s;
+        }
+        @keyframes fade {
+            0% {opacity: 0;}
+            20% {opacity: 1;}
+            80% {opacity: 1;}
+            100% {opacity: 0;}
+        }
+        .logout-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 8px 15px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            border-top: 1px solid #e6e6e6;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            z-index: 99;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: #666;
+            font-size: 14px;
+        }
+        .nav-item.active {
+            color: #409eff;
+        }
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <button class="logout-btn" onclick="logout()">退出游客模式</button>
+
+    <div class="container">
+        <h2 class="title">个人设置</h2>
+        <div class="settings-form">
+            <div class="form-group">
+                <label for="userName">账号昵称</label>
+                <input type="text" id="userName" placeholder="请输入昵称">
+            </div>
+            <div class="form-group">
+                <label for="oldPwd">原密码</label>
+                <input type="password" id="oldPwd" placeholder="请输入原密码">
+            </div>
+            <div class="form-group">
+                <label for="newPwd">新密码</label>
+                <input type="password" id="newPwd" placeholder="请输入新密码">
+            </div>
+            <div class="form-group">
+                <label for="confirmNewPwd">确认新密码</label>
+                <input type="password" id="confirmNewPwd" placeholder="请确认新密码">
+            </div>
+            <button class="submit-btn" id="saveSettingsBtn">保存设置</button>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <a href="index.html" class="nav-item">
+            <span class="nav-icon">🏠</span>
+            <span>选择餐厅</span>
+        </a>
+        <a href="current-reservations.html" class="nav-item">
+            <span class="nav-icon">📋</span>
+            <span>当前预约</span>
+        </a>
+        <a href="history-reservations.html" class="nav-item">
+            <span class="nav-icon">📜</span>
+            <span>历史预约</span>
+        </a>
+        <a href="javascript:void(0)" class="nav-item active">
+            <span class="nav-icon">⚙️</span>
+            <span>个人设置</span>
+        </a>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let currentUser = JSON.parse(localStorage.getItem('currentVisitor'));
+        let userAccounts = JSON.parse(localStorage.getItem('userAccounts')) || [];
+
+        // 初始化
+        window.onload = function() {
+            if (!currentUser) {
+                window.location.href = 'index.html';
+                return;
+            }
+            loadUserSettings();
+            document.getElementById('saveSettingsBtn').addEventListener('click', saveUserSettings);
+        };
+
+        function showToast(text) {
+            const toast = document.getElementById('toast');
+            toast.textContent = text;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        function logout() {
+            localStorage.removeItem('currentVisitor');
+            window.location.href = 'index.html';
+        }
+
+        // 加载用户设置
+        function loadUserSettings() {
+            if (currentUser) {
+                document.getElementById('userName').value = currentUser.name || '';
+            }
+        }
+
+        // 保存用户设置
+        function saveUserSettings() {
+            const userName = document.getElementById('userName').value;
+            const oldPwd = document.getElementById('oldPwd').value;
+            const newPwd = document.getElementById('newPwd').value;
+            const confirmNewPwd = document.getElementById('confirmNewPwd').value;
+
+            if (newPwd || oldPwd) {
+                if (!oldPwd) {
+                    showToast('请输入原密码！');
+                    return;
+                }
+                if (currentUser.password !== oldPwd) {
+                    showToast('原密码错误！');
+                    return;
+                }
+                if (newPwd !== confirmNewPwd) {
+                    showToast('两次密码不一致！');
+                    return;
+                }
+                if (newPwd.length < 6) {
+                    showToast('新密码长度不能少于6位！');
+                    return;
+                }
+                currentUser.password = newPwd;
+            }
+
+            if (userName) {
+                currentUser.name = userName;
+            }
+
+            // 更新本地存储
+            const userIndex = userAccounts.findIndex(u => u.id === currentUser.id);
+            if (userIndex !== -1) {
+                userAccounts[userIndex] = currentUser;
+                localStorage.setItem('userAccounts', JSON.stringify(userAccounts));
+                localStorage.setItem('currentVisitor', JSON.stringify(currentUser));
+            }
+
+            showToast('设置保存成功！');
+        }
+    </script>
+</body>
+</html>

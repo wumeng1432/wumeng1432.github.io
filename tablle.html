@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        table{
+        width: 100%;
+        }
+        th,td{
+            border: 1px solid green;
+            text-align: center;
+        }
+        th{
+            background-color: green;
+        }
+        button{
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center;">table prestect</h1>
+    <button onclick="increase()">increase</button>
+    <table id="table">
+        <tr>
+            <th>名字</th>
+            <th>号码</th>
+            <th>操作</th>
+        </tr>
+        <tr>
+            <td>李宇玲</td>
+            <td>13977495520</td>
+            <td>
+                <button onclick="editRow(this)">modify</button>
+                <button onclick="deleteRow(this)">delete</button>
+            </td>
+        </tr>
+    </table>
+    <script> 
+        //新增
+function increase(){
+    var table1=document.getElementById("table");
+    //console.log(table);
+    var len=table1.rows.length;
+    //console.log(len);
+    var newRow=table.insertRow(len);
+    //console.log(newRow);
+    var namecol=newRow.insertCell(0);
+    var xhcol=newRow.insertCell(1);
+    var accol=newRow.insertCell(2);
+    
+    namecol.innerHTML='未命名';
+    xhcol.innerHTML='无号码';
+    accol.innerHTML='<button onclick="editRow(this)">modify</button><button onclick="deleteRow(this)">delete</button>';
+}
+
+//删除
+function deleteRow(button){
+    //console.log(button);
+
+    var row=button.parentNode.parentNode;
+    //console.log(row);
+
+    row.parentNode.removeChild(row);
+}
+
+//编辑
+function editRow(button){
+
+    var row=button.parentNode.parentNode;
+    var name=row.cells[0];
+    var xh=row.cells[1];
+    console.log(button.parentNode.parentNode.cells[0]);
+    var input=prompt("请输入名字：");
+    var input1=prompt("请输入联系方式：");
+    
+    if(input==null)
+    {
+        input=name.innerHTML;
+    }
+    if(input1==null)
+    {
+        input1=xh.innerHTML;
+    }
+    name.innerHTML =input;
+    xh.innerHTML=input1;
+}
+    </script>
+</body>
+</html>

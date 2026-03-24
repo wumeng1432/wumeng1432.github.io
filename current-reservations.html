@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>当前预约 - 游客点单排队系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        body {
+            background-color: #f5f5f5;
+            padding-bottom: 80px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 30px;
+            margin-top: 20px;
+        }
+        .title {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .reservation-list {
+            margin: 20px 0;
+        }
+        .reservation-item {
+            border: 1px solid #e6e6e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        .reservation-item h3 {
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .reservation-item p {
+            margin: 8px 0;
+            color: #666;
+        }
+        .status {
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .status-pending-order {
+            background-color: #e2e3e5;
+            color: #6c757d;
+        }
+        .status-ready-order {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .submit-btn {
+            padding: 8px 15px;
+            background-color: #67c23a;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0,0,0,0.7);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 8px;
+            display: none;
+            z-index: 999;
+        }
+        .toast.show {
+            display: block;
+            animation: fade 2s;
+        }
+        @keyframes fade {
+            0% {opacity: 0;}
+            20% {opacity: 1;}
+            80% {opacity: 1;}
+            100% {opacity: 0;}
+        }
+        .logout-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 8px 15px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            border-top: 1px solid #e6e6e6;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            z-index: 99;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: #666;
+            font-size: 14px;
+        }
+        .nav-item.active {
+            color: #409eff;
+        }
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <button class="logout-btn" onclick="logout()">退出游客模式</button>
+
+    <div class="container">
+        <h2 class="title">当前预约</h2>
+        <div id="currentReservationList" class="reservation-list">
+            <!-- 当前预约列表动态生成 -->
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <a href="visitor.html" class="nav-item">
+            <span class="nav-icon">🏠</span>
+            <span>选择餐厅</span>
+        </a>
+        <a href="javascript:void(0)" class="nav-item active">
+            <span class="nav-icon">📋</span>
+            <span>当前预约</span>
+        </a>
+        <a href="history-reservations.html" class="nav-item">
+            <span class="nav-icon">📜</span>
+            <span>历史预约</span>
+        </a>
+        <a href="settings.html" class="nav-item">
+            <span class="nav-icon">⚙️</span>
+            <span>个人设置</span>
+        </a>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let currentUser = JSON.parse(localStorage.getItem('currentVisitor'));
+        let allOrders = JSON.parse(localStorage.getItem('allOrders')) || [];
+        let restaurants = JSON.parse(localStorage.getItem('restaurants')) || [
+            { id: 1, name: "川味小馆", recommend: true, queueCount: 0 },
+            { id: 2, name: "粤式茶餐厅", recommend: true, queueCount: 0 },
+            { id: 3, name: "湘菜馆", recommend: false, queueCount: 0 },
+            { id: 4, name: "东北饺子馆", recommend: false, queueCount: 0 },
+            { id: 5, name: "西北拉面", recommend: true, queueCount: 0 },
+            { id: 6, name: "海鲜大排档", recommend: false, queueCount: 0 },
+            { id: 7, name: "火锅城", recommend: true, queueCount: 0 },
+            { id: 8, name: "烧烤店", recommend: false, queueCount: 0 },
+            { id: 9, name: "素食馆", recommend: false, queueCount: 0 },
+            { id: 10, name: "快餐连锁店", recommend: true, queueCount: 0 }
+        ];
+
+        // 初始化
+        window.onload = function() {
+            if (!currentUser) {
+                window.location.href = 'index.html';
+                return;
+            }
+            renderCurrentReservations();
+        };
+
+        function showToast(text) {
+            const toast = document.getElementById('toast');
+            toast.textContent = text;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        function logout() {
+            localStorage.removeItem('currentVisitor');
+            window.location.href = 'index.html';
+        }
+
+        // 渲染当前预约
+        function renderCurrentReservations() {
+            const container = document.getElementById('currentReservationList');
+            container.innerHTML = '';
+
+            const userOrders = allOrders.filter(order => 
+                order.userId === currentUser.id && 
+                !order.isCanceled && 
+                order.status !== '已取餐'
+            );
+
+            if (userOrders.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 20px;">暂无当前预约</div>';
+                return;
+            }
+
+            userOrders.sort((a, b) => new Date(b.createTime) - new Date(a.createTime));
+            userOrders.forEach(order => {
+                let statusClass = '';
+                let statusText = '';
+                if (order.status === '待制作') {
+                    statusClass = 'status-pending-order';
+                    statusText = '待制作';
+                } else if (order.status === '待取餐') {
+                    statusClass = 'status-ready-order';
+                    statusText = '可取餐';
+                }
+
+                const item = document.createElement('div');
+                item.className = 'reservation-item';
+                item.innerHTML = `
+                    <h3>
+                        ${order.restaurantName} - 预约序号：${order.no}
+                        <span class="status ${statusClass}">${statusText}</span>
+                    </h3>
+                    <p><strong>游客昵称：</strong>${order.nickname || currentUser.name || currentUser.id}</p>
+                    <p><strong>预约时间：</strong>${order.reserveTime}</p>
+                    <p><strong>下单时间：</strong>${order.createTime}</p>
+                    <p><strong>所选菜品：</strong>${order.dishNames}</p>
+                    <p><strong>总金额：</strong>¥${order.totalPrice}</p>
+                    <button class="submit-btn" style="width: auto; padding: 8px 15px; background-color: #dc3545;" onclick="cancelOrder(${order.restaurantId}, ${order.no})">取消预约</button>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        // 取消订单
+        function cancelOrder(restaurantId, no) {
+            if (!confirm('确定要取消该预约吗？')) return;
+
+            const orderIndex = allOrders.findIndex(order => 
+                order.restaurantId === restaurantId && 
+                order.no === no &&
+                order.userId === currentUser.id
+            );
+
+            if (orderIndex === -1) {
+                showToast('订单不存在！');
+                return;
+            }
+
+            const order = allOrders[orderIndex];
+            if (order.status === '已取餐' || order.isCanceled) {
+                showToast('该订单无法取消！');
+                return;
+            }
+
+            order.isCanceled = true;
+            order.status = '已取消';
+
+            // 更新餐厅排队数
+            const restaurant = restaurants.find(r => r.id === restaurantId);
+            const validOrders = allOrders.filter(o => 
+                o.restaurantId === restaurantId && 
+                !o.isCanceled && 
+                o.status !== '已取餐'
+            );
+            restaurant.queueCount = validOrders.length;
+
+            localStorage.setItem('allOrders', JSON.stringify(allOrders));
+            localStorage.setItem('restaurants', JSON.stringify(restaurants));
+            showToast('预约已取消！');
+            renderCurrentReservations();
+        }
+    </script>
+</body>
+</html>
