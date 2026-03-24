@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>游客点单排队系统 - 模式选择</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        body {
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 50px;
+            text-align: center;
+        }
+        .title {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 40px;
+        }
+        .mode-btn {
+            display: block;
+            width: 250px;
+            padding: 20px 0;
+            font-size: 22px;
+            margin: 20px auto;
+            background-color: #409eff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+        .mode-btn:hover {
+            background-color: #66b1ff;
+        }
+        .admin-btn {
+            background-color: #67c23a;
+        }
+        .admin-btn:hover {
+            background-color: #85ce61;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">游客点单排队系统</h1>
+        <a href="visitor.html" class="mode-btn">游客模式</a>
+        <a href="admin.html" class="mode-btn admin-btn">管理模式</a>
+    </div>
+</body>
+</html>
